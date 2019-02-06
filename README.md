@@ -15,22 +15,22 @@ People mention work, friend ,family, home most, then followed by daughter, son, 
 + Number of words distribution 
 Most people say less than 15 words. And when the number of the words increases, the number of people decreases.
 
-![image](figs/Project1-words number distribution.png)
+![image](figs/Project1-words_number_distribution.png)
 
 + Agestage distribution 
  Young adults account for the main part, followed by teenagers and middle aged. The old aged poeple are the least.
 
-![image](figs/Project1-agestage distribution.png)
+![image](figs/Project1-agestage_distribution.png)
 
 + Emotion analysis 
  The expressions of people are most related to joy, anticipation and trust. Although the topic of sentences people speak is happiness, there are still negative related words which express fear, sadness, disgust and anger.
 
-![image](figs/Project1-emotion distribution.png)
+![image](figs/Project1-emotion_distribution.png)
 
 + Most five happiness moments of people at each agestage 
  Young adults and teenagers both mention work, friend, family and home most. But the difference is that young adults aslo consider night creates happiness more while teenagers like birthday more. In addition, middle aged and old aged both mention daughter, son and friend much. However, middle aged people like work best while old aged love wife more.
 
-![image](figs/Project1-top words of each agestage.png)
+![image](figs/Project1-top_words_of_each_agestage.png)
 
 3. Analysis about predicted category with other variables 
 + Predict category & agestage
