@@ -2,27 +2,59 @@
 ## Spring 2019
 ## Project 1: What made you happy today?
 
-![image](figs/title.jpeg)
+Name: Yun Zhang
+UNI: yz3384
 
-### [Project Description](doc/Proj1_desc.md)
-This is the first and only *individual* (as opposed to *team*) this semester. 
++ Project summary: 
+1. After Inspect an overall wordcloud, People mention work, friend ,family, home most, then followed by daughter, son, dinner and birthday.
 
-Term: Spring 2019
+![image](figs/Project1-cloud.jpeg)
 
-+ Projec title: Lorem ipsum dolor sit amet
-+ This project is conducted by [your name]
+2. Basic analysis
+· Number of words distribution
+Most people say less than 15 words. And when the number of the words increases, the number of people decreases.
 
-+ Project summary: [a short summary] Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+![image](figs/Project1-words number distribution.jpeg)
 
-Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
+· Agestage distribution
+Young adults account for the main part, followed by teenagers and middle aged. The old aged poeple are the least.
 
-```
-proj/
-├── lib/
-├── data/
-├── doc/
-├── figs/
-└── output/
-```
+![image](figs/Project1-agestage distribution.jpeg)
 
-Please see each subfolder for a README file.
+· Emotion analysis
+The expressions of people are most related to joy, anticipation and trust. Although the topic of sentences people speak is happiness, there are still negative related words which express fear, sadness, disgust and anger.
+
+![image](figs/Project1-emotion distribution.jpeg)
+
+· Most five happiness moments of people at each agestage
+Young adults and teenagers both mention work, friend, family and home most. But the difference is that young adults aslo consider night creates happiness more while teenagers like birthday more. In addition, middle aged and old aged both mention daughter, son and friend much. However, middle aged people like work best while old aged love wife more.
+
+![image](figs/Project1-top words of each agestage.jpeg)
+
+3. Analysis about predicted category with other variables
+· Predict category & agestage
+Teenagers, young adults and middle aged people all like achievement and affection most, but young adults have stronger feelings about that.
+
+![image](figs/Project1-category&agestage.jpeg)
+
+· Predict category & gender
+Female and male both like talking about affection. However, male prefer to discuss achievenment more than affection and female are the opposite.
+
+![image](figs/Project1-category&gender.jpeg)
+
+· Predict category & marital
+Married people and single people both like achievement and affection most. However, married people prefer affection better while single people prefer achievement more. In addition, the remaining components of predict category are only small parts of happiness. But single people think bonding, enjoying the moment and leisure more than married people.
+
+![image](figs/Project1-category&maritage.jpeg)
+
+· Predict category & reflection period
+From the graphic above, there does not exist great differences between reflection period of 24 hours and 3 months. People in two groups all like achievement and affection more. The small difference is that people with 3 months reflection period are more likely to consider achievement and affection as the happiest moment. In contrast, people with one day reflection period think enjoying the moment and leisure matter more than people have 3 months reflection period.
+
+![image](figs/Project1-category&reflection.jpeg)
+
+· Prediction category & parenthood
+People who have children like to discuss about affection most, but people without children like achievement more than affection.
+![image](figs/Project1-category&parenthood.jpeg)
+
+
+
