@@ -1,0 +1,271 @@
+---
+title: "Project1-yz3384"
+author: "Yun Zhang-yz3384"
+date: "1/30/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r,echo=FALSE}
+#load package and data
+library("readr")
+library("rvest")
+library("tibble")
+#library("qdap")
+library("sentimentr")
+library("gplots")
+library("dplyr")
+library("tm")        
+library("syuzhet")
+library("factoextra")
+library("beeswarm")
+library("scales")
+library("RColorBrewer")
+library("RANN")
+library("tm")
+library("topicmodels")
+library("tidytext")
+library("ggplot2")
+library("ggthemes")
+library("wordcloud")
+library(RColorBrewer)
+cleaned <- read_csv("./rit-public-HappyDB-b9e529e/happydb/data/cleaned_hm.csv")
+demographic = read_csv("./rit-public-HappyDB-b9e529e/happydb/data/demographic.csv")
+```
+
+
+Take a brief look at data  
+```{r}
+glimpse(cleaned)
+glimpse(demographic)
+```
+
+## Inspect an overall wordcloud
+```{r}
+sentences=cleaned$cleaned_hm
+sentences1=Corpus(VectorSource(sentences))
+ff.all<-tm_map(sentences1, stripWhitespace)
+ff.all<-tm_map(ff.all, content_transformer(tolower))
+ff.all<-tm_map(ff.all, removeWords, stopwords("english"))
+ff.all<-tm_map(ff.all, removeWords, character(0))
+ff.all<-tm_map(ff.all, removePunctuation)
+limit_words = c("happy","went","time","got","really","nice","yesterday","one","finally","today","life","
+                came","get","able","great","well","first","year","lot","morning","getting","felt","like","moment","new","week","just","going","long","see","good","back","came","found","hours","month","months","weekend","two","little","days","took","around","people","event","now","big","can","together","made","day","years","much","last","will","best","weeks","happiest","make","fun","friends","favorite","feel","past","started","working","ago","happiness","things")
+ff.all <- tm_map(ff.all, removeWords, limit_words)
+
+tdm.all<-TermDocumentMatrix(ff.all)
+tdm.tidy=tidy(tdm.all)
+tdm.overall=summarise(group_by(tdm.tidy, term), sum(count))
+wordcloud(tdm.overall$term, tdm.overall$`sum(count)`,
+          scale=c(5,0.5),
+          max.words=50,
+          min.freq=1,
+          random.order=FALSE,
+          rot.per=0.3,
+          use.r.layout=T,
+          random.color=FALSE,
+          colors=brewer.pal(9,"Blues"))
+```
+
+People mention work, friend ,family, home most, then followed by daughter, son, dinner and birthday.  
+
+## Basic analysis
+# Calculate word length
+```{r}
+number_words <- cleaned %>%
+  unnest_tokens(word, cleaned_hm) %>%
+  group_by(hmid) %>%
+  summarise(words_number = n()) %>%
+  arrange(desc(words_number))
+cleaned_1 <- right_join(cleaned,number_words, by='hmid')
+
+ggplot(data=cleaned_1,aes(x=words_number,fill="red"))+
+  geom_histogram(binwidth = 5)+
+  xlim(-1,100)+
+  labs(xlab = "Number of words", ylab = "Frequency")+
+  guides(fill=FALSE)+
+  theme_economist()+
+  labs(title="Number of Words of Each People Say",x="Number of Words",y="Frequency")
+```
+
+Most people say less than 15 words. And when the number of the words increases, the number of people decreases.  
+
+
+# Analyze age distribution
+```{r}
+demographic$age <- as.numeric(demographic$age)
+ggplot(data=demographic,aes(age))+
+  geom_histogram(binwidth = 5,fill='blue')+
+  xlim(-1,100)+
+  theme_economist()+
+  labs(title="Age distribution",x="Age",y="Frequency")
+```
+
+This histogram graphic shows the distribution of age.   
+Most people are about 20 to 30 years old. The number of people decreases when the age of people increases after 20.  
+
+
+# Analyze agestage
+```{r}
+demographic <- demographic %>%
+  mutate(agestage = 
+           ifelse(demographic$age %in% 11:25, "Teenager", 
+           ifelse(demographic$age %in% 26:40, "Young adult", 
+           ifelse(demographic$age %in% 41:65, "Middle aged", 
+           ifelse(demographic$age %in% 66:90, "Old aged", 
+           "NA")))))
+
+cleaned_2 <- left_join(cleaned_1,select(demographic,wid,agestage), by='wid')
+cleaned_2$agestage <- factor(cleaned_2$agestage)
+cleaned_2$agestage <- factor(cleaned_2$agestage, levels = c('Teenager','Young adult','Middle aged','Old aged','NA'))
+
+ggplot(data=cleaned_2,aes(agestage))+
+  geom_bar(fill='lightyellow')+
+  theme_economist()+
+  labs(title="Agestage Histogram",x="Agestage",y="Frequency")
+```
+
+Young adults account for the main part, followed by teenagers and middle aged. The old aged poeple are the least.  
+
+
+## Analyze emotion using NRC sentiment lexion
+```{r}
+words<-paste(cleaned$cleaned_hm)
+emotions=get_nrc_sentiment(words)
+emotions_sum=apply(emotions,2,sum)
+emotions_df=data.frame(emotion=colnames(emotions),frequency=emotions_sum)
+emotions_df$emotion = factor(emotions_df$emotion, levels=c("anger","anticipation","disgust","fear","joy","sadness","surprise","trust","negative","positive"))
+ggplot(data=emotions_df,aes(emotion,y=frequency,fill=emotion))+
+  geom_bar(stat = "identity")+
+  theme_economist()
+```
+
+The expressions of people are most related to joy, anticipation and trust. Although the topic of sentences people speak is happiness, there are still negative related words which express fear, sadness, disgust and anger.   
+
+
+
+# Analyze most five happiness moments of people at each agestage
+```{r}
+agestage_name=unique(cleaned_2$agestage)
+age_word=NULL
+for (age in agestage_name) {
+  data=as.vector(cleaned_2[which(cleaned_2$agestage==age),"cleaned_hm"])
+  word=Corpus(VectorSource(data))
+  ff.all1<-tm_map(word, stripWhitespace)
+  ff.all1<-tm_map(ff.all1, content_transformer(tolower))
+  ff.all1<-tm_map(ff.all1, removeWords, stopwords("english"))
+  ff.all1<-tm_map(ff.all1, removeWords, character(0))
+  ff.all1<-tm_map(ff.all1, removePunctuation)
+  ff.all1 <- tm_map(ff.all1, removeWords, limit_words)
+  tdm.all1<-TermDocumentMatrix(ff.all1)
+  tdm.tidy1=tidy(tdm.all1)
+  tdm.overall1=as.data.frame(summarise(group_by(tdm.tidy1, term), sum(count)))
+  tdm.overall1=tdm.overall1[order(tdm.overall1[,"sum(count)"],decreasing = TRUE),]
+  age_top_word=cbind(tdm.overall1[1:5,],rep(age,5))
+  age_word=rbind(age_word,age_top_word)
+}
+names(age_word)<-c("word","frequency","agestage")
+age_word[-which(age_word$agestage=="NA"),]
+```
+
+The dataframe shows the top five words people from different agestage mention.  
+We can see that young adults and teenagers both mention work, friend, family and home most. But the difference is that young adults aslo consider night creates happiness more while teenagers like birthday more. In addition, middle aged and old aged both mention daughter, son and friend much. However, middle aged people like work best while old aged love wife more.  
+
+## Analysis about predicted category with other variables
+# Predict category & agestage
+```{r}
+cleaned_age=cleaned_2[cleaned_2$agestage == "Young adult" |cleaned_2$agestage == "Teenager"|cleaned_2$agestage == "Middle aged",]
+ggplot(cleaned_age, aes(x=as.factor(cleaned_age$predicted_category))) + 
+  facet_wrap(~cleaned_age$agestage) + 
+  geom_bar(aes(y=..count../sum(..count..),fill=cleaned_age$predicted_category)) +
+  scale_y_continuous(labels=percent_format())+
+  labs(x="Predicted Category",y="Proportion") +
+  theme_economist()+
+  guides(fill=FALSE)+
+  theme(axis.text.x = element_text(angle = 60,vjust=0.6,hjust=0.5))
+```
+
+Teenagers, young adults and middle aged people all like achievement and affection most, but young adults have stronger feelings about that. 
+
+# Predict category & gender
+```{r}
+cleaned_3 <- left_join(cleaned_2,select(demographic,wid,gender), by='wid')
+cleaned_gender <- cleaned_3[cleaned_3$gender == "f" |cleaned_3$gender == "m",]
+cleaned_gender<-cleaned_gender[-which(is.na(cleaned_gender$gender)),]
+ggplot(cleaned_gender, aes(x=as.factor(cleaned_gender$predicted_category))) + 
+  facet_wrap(~cleaned_gender$gender) + 
+  geom_bar(aes(y=..count../sum(..count..),fill=cleaned_gender$predicted_category)) +
+  scale_y_continuous(labels=percent_format())+
+  labs(x="Predicted Category",y="Proportion") +
+  theme_economist()+
+  guides(fill=FALSE)+
+  theme(axis.text.x = element_text(angle = 60,vjust=0.6,hjust=0.5))
+```
+
+Female and male both like talking about affection. However, male prefer to discuss achievenment more than affection and female are the opposite.
+
+
+
+# Predict category & marital
+```{r}
+cleaned_4 <- left_join(cleaned_3,select(demographic,wid,marital), by='wid')
+cleaned_marital <- cleaned_4[cleaned_4$marital == "married" |cleaned_4$marital == "single",]
+cleaned_marital<-cleaned_marital[-which(is.na(cleaned_marital$marital)),]
+ggplot(cleaned_marital, aes(x=as.factor(cleaned_marital$predicted_category))) + 
+  facet_wrap(~cleaned_marital$marital) + 
+  geom_bar(aes(y=..count../sum(..count..),fill=cleaned_marital$predicted_category)) +
+  scale_y_continuous(labels=percent_format())+
+  labs(x="Predicted Category",y="Proportion") +
+  theme_economist()+
+  guides(fill=FALSE)+
+  theme(axis.text.x = element_text(angle = 60,vjust=0.6,hjust=0.5))
+```
+
+Married people and single people both like achievement and affection most. However, married people prefer affection better while single people prefer achievement more. In addition, the remaining components of predict category are only small parts of happiness. But single people think bonding, enjoying the moment and leisure more than married people.  
+
+
+
+
+
+
+
+
+# Predict category & reflection period
+```{r}
+ggplot(cleaned, aes(x=as.factor(cleaned$predicted_category))) + 
+  facet_wrap(~cleaned$reflection_period) + 
+  geom_bar(aes(y=..count../sum(..count..),fill=cleaned$predicted_category)) +
+  scale_y_continuous(labels=percent_format())+
+  labs(x="Predicted Category",y="Proportion") +
+  theme_economist()+
+  guides(fill=FALSE)+
+  theme(axis.text.x = element_text(angle = 60,vjust=0.6,hjust=0.5))
+
+```
+
+From the graphic above, there does not exist great differences between reflection period of 24 hours and 3 months. People in two groups all like achievement and affection more. The small difference is that people with 3 months reflection period are more likely to consider achievement and affection as the happiest moment. In contrast, people with one day reflection period think enjoying the moment and leisure matter more than people have 3 months reflection period.  
+
+
+# Prediction category & parenthood
+```{r}
+cleaned_5 <- left_join(cleaned_4,select(demographic,wid,parenthood), by='wid')
+cleaned_parenthood <- cleaned_5[cleaned_5$parenthood == "n" |cleaned_5$parenthood == "y",]
+cleaned_parenthood<-cleaned_parenthood[-which(is.na(cleaned_parenthood$parenthood)),]
+ggplot(cleaned_parenthood, aes(x=as.factor(cleaned_parenthood$predicted_category))) + 
+  facet_wrap(~cleaned_parenthood$parenthood) + 
+  geom_bar(aes(y=..count../sum(..count..),fill=cleaned_parenthood$predicted_category)) +
+  scale_y_continuous(labels=percent_format())+
+  labs(x="Predicted Category",y="Proportion") +
+  theme_economist()+
+  guides(fill=FALSE)+
+  theme(axis.text.x = element_text(angle = 60,vjust=0.6,hjust=0.5))
+```
+
+People who have children like to discuss about affection most, but people without children like achievement more than affection.
+
+
+
